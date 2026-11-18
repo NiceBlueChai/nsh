@@ -55,7 +55,11 @@
   that asked with `UiThread::invoke`; WIC decodes and its scaler (Fant) shrinks to the bucket, the `image` crate for animations and what
   WIC cannot read; a `Frame` keeps its premultiplied BGRA pixels and makes its Direct2D bitmap when first drawn,
   which then adds its bytes to the entry (`add_cost`, once: one made again after a device loss replaces it);
-  evicting the entry releases its bitmaps (`on_evict`). macOS (`nsh-platform-macos` `image.rs`): ImageIO thumbnails
+  evicting the entry releases its bitmaps (`on_evict`). GIF and WebP animations whose decoded frames exceed 48 MiB
+  keep their encoded bytes and decode frames on a worker, retaining the playback position across a resize; a hidden
+  view cancels its worker and resumes from its last frame. Up to four workers share a 128 MiB working-memory limit,
+  counted in the image budget; another waits for capacity. A single frame over 48 MiB, an inline source over 64 MiB,
+  or one stream requiring more than the working-memory limit still shows its first frame. macOS (`nsh-platform-macos` `image.rs`): ImageIO thumbnails
   (`CGImageSourceCreateThumbnailAtIndex`, `ThumbnailMaxPixelSize` the bucket's side when it shrinks) and the bucket's
   SVG raster; each frame reserves two page-rounded stores at its actual CGImage row stride,
   for the decoded pixels and Core Animation's display copy (a conservative estimate, not a process footprint cap);
